@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CardioScan — Dashboard</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    :root {
+      --sky:       #3B9FD4;
+      --sky-light: #EBF5FB;
+      --sky-mid:   #C2DFF0;
+      --sky-dark:  #1E6A96;
+      --white:     #FFFFFF;
+      --off:       #F7FAFB;
+      --border:    #D0E8F2;
+      --text:      #1A2B35;
+      --text2:     #4A6578;
+      --text3:     #8AAAB8;
+      --red:       #D64F4F;
+      --amber:     #D4891A;
+      --green:     #2E9E74;
+      --r:         8px;
+      --r-lg:      14px;
+      --r-xl:      20px;
+      --shadow-sm: 0 1px 3px rgba(30,80,120,.08);
+      --shadow-md: 0 4px 16px rgba(30,80,120,.10);
+    }
+
+    *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--off);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0 0 60px;
+    }
+
+    /* HEADER */
+    .header {
+      width: 100%;
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 0 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 68px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: var(--shadow-sm);
+    }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .brand-icon {
+      width: 34px; height: 34px;
+      background: var(--sky); border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .brand-name { font-size: 24px; color: var(--text); letter-spacing: -.2px; font-weight: 800; }
+    .brand-name em { font-style: italic; color: var(--sky); }
+    .brand-tag { font-size: 10px; color: var(--text3); letter-spacing: 2px; text-transform: uppercase; margin-top: 1px; font-weight: 700; }
+    .header-nav { display: flex; align-items: center; gap: 6px; }
+    .nav-link {
+      font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
+      color: var(--text3); text-decoration: none;
+      padding: 8px 18px; border-radius: 40px;
+      border: 1px solid transparent; transition: .18s; font-weight: 700;
+    }
+    .nav-link:hover, .nav-link.active { border-color: var(--sky); color: var(--sky); background: var(--sky-light); }
+
+    /* MAIN */
+    .main {
+      width: 100%; max-width: 1080px;
+      padding: 28px 24px 0;
+      display: flex; flex-direction: column; gap: 16px;
+    }
+
+    /* CARDS */
+    .card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--r-xl);
+      box-shadow: var(--shadow-sm);
+      padding: 24px 28px;
+    }
+
+    .section-label {
+      font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+      color: var(--sky); font-weight: 800;
+      padding-bottom: 12px; border-bottom: 1px solid var(--border);
+      margin-bottom: 18px;
+    }
+
+    /* STATS ROW */
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+    }
+    .stat-chip {
+      background: var(--sky-light);
+      border: 1px solid var(--sky-mid);
+      border-radius: var(--r-lg);
+      padding: 18px 16px; text-align: center;
+    }
+    .stat-val {
+      font-size: 32px; font-weight: 800; color: var(--text);
+      line-height: 1; margin-bottom: 6px;
+    }
+    .stat-lbl {
+      font-size: 10px; color: var(--text3);
+      letter-spacing: 1.5px; text-transform: uppercase; font-weight: 700;
+    }
+
+    /* CHART */
+    .chart-wrap {
+      background: var(--off);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 20px;
+    }
+
+    /* TABLE */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th {
+      font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+      color: var(--text3); font-weight: 700; padding: 0 0 12px;
+      text-align: left;
+    }
+    td {
+      font-size: 13px; color: var(--text2); font-weight: 600;
+      padding: 12px 0; border-top: 1px solid var(--border);
+    }
+    tr:hover td { background: var(--sky-light); }
+
+    .badge {
+      display: inline-block; padding: 3px 12px;
+      border-radius: 20px; font-size: 10px;
+      font-weight: 700; letter-spacing: 1px;
+      border: 1.5px solid currentColor;
+      text-transform: uppercase;
+    }
+    .badge.high  { color: var(--red);   background: rgba(214,79,79,.07); }
+    .badge.mod   { color: var(--amber); background: rgba(212,137,26,.07); }
+    .badge.low   { color: var(--green); background: rgba(46,158,116,.07); }
+
+    .empty-row td {
+      text-align: center; color: var(--text3);
+      padding: 32px 0; font-size: 14px;
+    }
+    .empty-row a { color: var(--sky); text-decoration: none; font-weight: 700; }
+    .empty-row a:hover { text-decoration: underline; }
+
+    .action-btn {
+      font-size: 10px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase;
+      padding: 4px 10px; border-radius: 16px; border: 1px solid var(--border);
+      background: var(--white); color: var(--text2); cursor: pointer; transition: .18s;
+    }
+    .action-btn:hover { border-color: var(--sky); color: var(--sky); background: var(--sky-light); }
+    .action-btn.danger:hover { border-color: var(--red); color: var(--red); background: rgba(214,79,79,.08); }
+    .action-wrap { display: flex; gap: 6px; align-items: center; }
+
+    @media(max-width: 640px) {
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .header { padding: 0 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="brand">
+    <div class="brand-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M12 21s-9-5.5-9-11.5A5.5 5.5 0 0 1 12 5.93 5.5 5.5 0 0 1 21 9.5C21 15.5 12 21 12 21z" fill="white" opacity=".9"/>
+        <path d="M6 12h2.5l1.5-3 2 6 1.5-3.5 1 2H18" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div>
+      <div class="brand-name">Cardio<em>Scan</em></div>
+      <div class="brand-tag">Risk Assessment v3.0</div>
+    </div>
+  </div>
+  <div class="header-nav">
+  <a href="/home/" class="nav-link">New Scan</a>
+    <a href="/dashboard/" class="nav-link active">Dashboard</a>
+    <a href="/upload-csv/" class="nav-link">CSV Upload</a>
+    <a href="/logout/" class="nav-link">Sign Out</a>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- Stats -->
+  <div class="card">
+    <div class="section-label">Overview — {{ profile.user.email }}</div>
+    <div class="stats-grid">
+      <div class="stat-chip">
+        <div class="stat-val" id="total-scans">{{ scans_data|length }}</div>
+        <div class="stat-lbl">Total Scans</div>
+      </div>
+      <div class="stat-chip">
+        <div class="stat-val" id="avg-risk">—</div>
+        <div class="stat-lbl">Avg Risk</div>
+      </div>
+      <div class="stat-chip">
+        <div class="stat-val" id="latest-risk" style="font-size:24px">—</div>
+        <div class="stat-lbl">Latest Score</div>
+      </div>
+      <div class="stat-chip">
+        <div class="stat-val" id="trend-arrow" style="font-size:22px">—</div>
+        <div class="stat-lbl">Trend</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Timeline chart -->
+  <div class="card">
+    <div class="section-label">Risk Timeline</div>
+    <div class="chart-wrap">
+      <canvas id="timelineChart" height="70"></canvas>
+    </div>
+  </div>
+
+  <!-- Scan History Table -->
+  <div class="card">
+    <div class="section-label">Scan History</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Risk Score</th>
+            <th>Blood Pressure</th>
+            <th>BMI</th>
+            <th>Patient</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for scan in scans_data %}
+          <tr data-scan-id="{{ scan.id }}">
+            <td>{{ scan.created_at|date:"d M Y, H:i" }}</td>
+            <td><strong>{{ scan.probability|floatformat:1 }}%</strong></td>
+            <td>{{ scan.input_data.ap_hi }}/{{ scan.input_data.ap_lo }} mmHg</td>
+            <td>{{ scan.bmi }}</td>
+            <td>{{ scan.input_data.patient_name|default:scan.user_email }}</td>
+            <td>
+              <span class="badge {% if scan.probability >= 0.7 %}high{% elif scan.probability >= 0.4 %}mod{% else %}low{% endif %}">
+                {{ scan.risk_label }}
+              </span>
+            </td>
+            <td>
+              <div class="action-wrap">
+                <button class="action-btn js-view">View</button>
+                <button class="action-btn js-export">Export</button>
+                <button class="action-btn danger js-delete">Delete</button>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr class="empty-row">
+              <td colspan="7">
+                No scans yet — <a href="/home/" style="color:#f5c842">run your first analysis</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+{{ scans_data|json_script:"scan-data" }}
+
+<script>
+fetch('/api/history/').then(r => r.json()).then(data => {
+  const scans = data.scans;
+  if (!scans.length) return;
+
+  const probs = scans.map(s => s.prob);
+  const avg = Math.round(probs.reduce((a, b) => a + b, 0) / probs.length);
+  const latest = probs[probs.length - 1];
+  const prev = probs.length > 1 ? probs[probs.length - 2] : latest;
+  const trendText = latest > prev ? '↑ Higher' : latest < prev ? '↓ Lower' : '→ Same';
+  const trendColor = latest > prev ? 'var(--red)' : latest < prev ? 'var(--green)' : 'var(--text3)';
+
+  document.getElementById('avg-risk').textContent = avg + '%';
+
+  const latestEl = document.getElementById('latest-risk');
+  latestEl.textContent = latest + '%';
+  latestEl.style.color = latest >= 70 ? 'var(--red)' : latest >= 40 ? 'var(--amber)' : 'var(--green)';
+
+  const tEl = document.getElementById('trend-arrow');
+  tEl.textContent = trendText;
+  tEl.style.color = trendColor;
+
+  // Timeline Chart
+  new Chart(document.getElementById('timelineChart'), {
+    type: 'line',
+    data: {
+      labels: scans.map(s => s.date),
+      datasets: [{
+        data: probs,
+        borderColor: 'var(--sky)',
+        backgroundColor: 'rgba(59,159,212,0.08)',
+        borderWidth: 2, tension: .4, fill: true,
+        pointBackgroundColor: probs.map(v => v >= 70 ? '#D64F4F' : v >= 40 ? '#D4891A' : '#2E9E74'),
+        pointRadius: 5, pointHoverRadius: 7,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => `Risk: ${ctx.raw}%` } },
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(59,159,212,.08)' },
+          ticks: { color: '#8AAAB8', font: { size: 10, family: 'Arial' } }
+        },
+        y: {
+          min: 0, max: 100,
+          grid: { color: 'rgba(59,159,212,.08)' },
+          ticks: { color: '#8AAAB8', font: { size: 10 }, callback: v => v + '%' }
+        },
+      }
+    }
+  });
+});
+
+function getCookie(name){
+  const value=`; ${document.cookie}`;
+  const parts=value.split(`; ${name}=`);
+  if(parts.length===2) return parts.pop().split(';').shift();
+  return '';
+}
+
+const scanDataList = (()=>{
+  const el = document.getElementById('scan-data');
+  if(!el) return [];
+  try { return JSON.parse(el.textContent || '[]'); } catch(e){ return []; }
+})();
+const scanMap = scanDataList.reduce((acc, item)=>{
+  acc[String(item.id)] = item;
+  return acc;
+}, {});
+
+function parseRowData(row){
+  const id = String(row.dataset.scanId || '');
+  return scanMap[id] || {};
+}
+
+function exportScanPdf(scan){
+  const { jsPDF } = window.jspdf || {};
+  if(!jsPDF){
+    alert('PDF library not loaded. Please refresh and try again.');
+    return;
+  }
+  if(!scan.payload){
+    alert('Report data missing. Please refresh the page.');
+    return;
+  }
+  const pdf = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const W=210,M=18,p=scan.payload||{},prob=scan.prob||0,ageYr=scan.ageYr||Math.round((p.age||0)/365);
+  const bmi=p.weight ? (p.weight/((p.height/100)**2)) : 0;
+  const pct=Math.round(prob*100);
+  const riskLabel=prob>=.7?'HIGH RISK':prob>=.4?'MODERATE RISK':'LOW RISK';
+  const riskColor=prob>=.7?[214,79,79]:prob>=.4?[212,137,26]:[46,158,116];
+  const now=new Date(scan.createdAt || Date.now());
+
+  pdf.setFillColor(59,159,212);
+  pdf.rect(0,0,W,24,'F');
+  pdf.setFontSize(16);pdf.setFont('helvetica','bold');pdf.setTextColor(255,255,255);
+  pdf.text('CardioScan',M,12);
+  pdf.setFontSize(7.5);pdf.setFont('helvetica','normal');pdf.setTextColor(220,240,255);
+  pdf.text('CARDIOVASCULAR RISK ASSESSMENT REPORT',M,18);
+  pdf.text(`Generated: ${now.toLocaleDateString()} ${now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}`,W-M,18,{align:'right'});
+
+  let y=32;
+  pdf.setFillColor(...riskColor);
+  pdf.roundedRect(M,y,W-2*M,16,3,3,'F');
+  pdf.setFontSize(18);pdf.setFont('helvetica','bold');pdf.setTextColor(255,255,255);
+  pdf.text(`${pct}%`,M+8,y+11);
+  pdf.setFontSize(10);pdf.text(riskLabel,M+26,y+8);
+  pdf.setFontSize(7.5);pdf.setFont('helvetica','normal');
+  pdf.text('Cardiovascular disease probability score',M+26,y+13);
+  y+=22;
+
+  pdf.setFontSize(8.5);pdf.setFont('helvetica','bold');pdf.setTextColor(59,159,212);
+  pdf.text('PATIENT VITALS',M,y);
+  pdf.setDrawColor(194,223,240);pdf.setLineWidth(0.3);pdf.line(M,y+2,W-M,y+2);
+  y+=6;
+
+  const items=[
+    ['Patient',p.patient_name||'-'],['Age',`${ageYr} years`],['Height',`${p.height||'-'} cm`],['Weight',`${p.weight||'-'} kg`],
+    ['BMI',bmi?`${bmi.toFixed(1)} kg/m²`:'-'],['Systolic BP',`${p.ap_hi||'-'} mmHg`],['Diastolic BP',`${p.ap_lo||'-'} mmHg`],
+    ['Gender',p.gender===1?'Male':p.gender===2?'Female':'-'],['Risk Score',`${prob.toFixed(3)}`],
+  ];
+  const colW=(W-2*M)/4;
+  items.forEach((v2,i)=>{
+    const col=i%4,row=Math.floor(i/4);
+    const cx=M+col*colW,cy=y+row*12;
+    pdf.setFillColor(235,245,251);pdf.roundedRect(cx,cy,colW-2,10,1.5,1.5,'F');
+    pdf.setFontSize(6.5);pdf.setFont('helvetica','normal');pdf.setTextColor(138,170,184);
+    pdf.text(v2[0].toUpperCase(),cx+3,cy+4.2);
+    pdf.setFontSize(8.5);pdf.setFont('helvetica','bold');pdf.setTextColor(26,43,53);
+    pdf.text(v2[1],cx+3,cy+8.4);
+  });
+
+  pdf.save(`CardioScan-Report-${now.toISOString().slice(0,10)}.pdf`);
+}
+
+async function ensureScanData(row, scan){
+  if(scan && scan.payload) return scan;
+  const id = row.dataset.scanId;
+  if(!id) return {};
+  try {
+    const res = await fetch(`/scan/${id}/detail/`);
+    if(!res.ok) return {};
+    return await res.json();
+  } catch(e){
+    return {};
+  }
+}
+
+document.querySelectorAll('tr[data-scan-id]').forEach(row=>{
+  const scan=parseRowData(row);
+  const viewBtn=row.querySelector('.js-view');
+  const exportBtn=row.querySelector('.js-export');
+  const deleteBtn=row.querySelector('.js-delete');
+
+  if(viewBtn){
+    viewBtn.addEventListener('click',async ()=>{
+      const fullScan = await ensureScanData(row, scan);
+      if(!fullScan.payload){
+        alert('Report data missing. Please refresh the page.');
+        return;
+      }
+  localStorage.setItem('cs_last', JSON.stringify({data:{probability: fullScan.prob}, payload: fullScan.payload, ageYr: fullScan.ageYr}));
+  window.location.href = '/home/';
+    });
+  }
+  if(exportBtn){
+    exportBtn.addEventListener('click',async ()=>{
+      const fullScan = await ensureScanData(row, scan);
+      exportScanPdf(fullScan);
+    });
+  }
+  if(deleteBtn){
+    deleteBtn.addEventListener('click',()=>{
+      fetch(`/scan/${row.dataset.scanId}/delete/`,{
+        method:'POST',
+        credentials:'same-origin',
+        headers:{'X-CSRFToken': getCookie('csrftoken')}
+      })
+      .then(r=>r.json())
+      .then(res=>{
+        if(res.deleted){
+          row.remove();
+          const totalEl=document.getElementById('total-scans');
+          if(totalEl){totalEl.textContent=Math.max(0,(+totalEl.textContent||1)-1);}
+        }
+      });
+    });
+  }
+});
+</script>
+</body>
+</html>

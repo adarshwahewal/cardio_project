@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CardioScan — {% if tab == 'login' %}Sign In{% else %}Register{% endif %}</title>
+  <style>
+    :root {
+      --sky:       #3B9FD4;
+      --sky-light: #EBF5FB;
+      --sky-mid:   #C2DFF0;
+      --sky-dark:  #1E6A96;
+      --white:     #FFFFFF;
+      --off:       #F7FAFB;
+      --border:    #D0E8F2;
+      --text:      #1A2B35;
+      --text2:     #4A6578;
+      --text3:     #8AAAB8;
+      --red:       #D64F4F;
+      --r:         8px;
+      --r-lg:      14px;
+      --r-xl:      20px;
+      --shadow-sm: 0 1px 3px rgba(30,80,120,.08);
+      --shadow-md: 0 4px 16px rgba(30,80,120,.12);
+    }
+
+    *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--off);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    /* ECG decoration strip at top */
+    .ecg-bar {
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(90deg, var(--sky-light) 0%, var(--sky) 40%, var(--sky-mid) 100%);
+      position: fixed;
+      top: 0;
+      left: 0;
+    }
+
+    .brand {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 32px;
+    }
+    .brand-icon {
+      width: 40px; height: 40px;
+      background: var(--sky); border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 12px rgba(59,159,212,.3);
+    }
+    .brand-name { font-size: 26px; color: var(--text); letter-spacing: -.2px; font-weight: 800; }
+    .brand-name em { font-style: italic; color: var(--sky); }
+    .brand-tag { font-size: 10px; color: var(--text3); letter-spacing: 2px; text-transform: uppercase; margin-top: 2px; font-weight: 700; }
+
+    .box {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--r-xl);
+      padding: 40px 36px;
+      width: 100%; max-width: 420px;
+      box-shadow: var(--shadow-md);
+    }
+
+    .box-title { font-size: 22px; font-weight: 800; color: var(--text); margin-bottom: 4px; }
+    .box-sub {
+      font-size: 11px; color: var(--text3);
+      letter-spacing: 2px; text-transform: uppercase;
+      font-weight: 700; margin-bottom: 28px;
+    }
+
+    .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .field label {
+      font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
+      color: var(--text3); font-weight: 700;
+    }
+    .field input {
+      background: var(--off); border: 1px solid var(--border);
+      border-radius: var(--r); color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 15px; font-weight: 600;
+      padding: 12px 14px; outline: none; width: 100%;
+      transition: border-color .18s, box-shadow .18s;
+    }
+    .field input::placeholder { color: var(--text3); font-size: 13px; font-weight: 400; }
+    .field input:focus {
+      border-color: var(--sky);
+      box-shadow: 0 0 0 3px rgba(59,159,212,.12);
+      background: var(--white);
+    }
+
+    .btn {
+      width: 100%; padding: 14px;
+      border: none; border-radius: var(--r);
+      background: var(--sky); color: white;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 15px; font-weight: 800;
+      cursor: pointer; transition: .2s;
+      margin-top: 8px; letter-spacing: .3px;
+    }
+    .btn:hover { background: var(--sky-dark); }
+
+    .error {
+      background: rgba(214,79,79,.08);
+      border: 1px solid rgba(214,79,79,.25);
+      border-radius: var(--r);
+      padding: 11px 14px;
+      font-size: 12px; color: var(--red);
+      margin-bottom: 16px; font-weight: 600;
+    }
+
+    .toggle {
+      text-align: center; margin-top: 22px;
+      padding-top: 18px; border-top: 1px solid var(--border);
+      font-size: 12px; color: var(--text3); font-weight: 600;
+    }
+    .toggle a { color: var(--sky); text-decoration: none; font-weight: 700; }
+    .toggle a:hover { text-decoration: underline; }
+
+    /* Divider */
+    .divider {
+      display: flex; align-items: center; gap: 12px;
+      margin: 20px 0 0;
+    }
+    .divider-line { flex: 1; height: 1px; background: var(--border); }
+    .divider-text { font-size: 10px; color: var(--text3); letter-spacing: 1px; text-transform: uppercase; font-weight: 700; }
+
+    @media(max-width: 480px) {
+      .box { padding: 28px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="ecg-bar"></div>
+
+<div class="brand">
+  <div class="brand-icon">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+      <path d="M12 21s-9-5.5-9-11.5A5.5 5.5 0 0 1 12 5.93 5.5 5.5 0 0 1 21 9.5C21 15.5 12 21 12 21z" fill="white" opacity=".9"/>
+      <path d="M6 12h2.5l1.5-3 2 6 1.5-3.5 1 2H18" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+  <div>
+    <div class="brand-name">Cardio<em>Scan</em></div>
+    <div class="brand-tag">Risk Assessment</div>
+  </div>
+</div>
+
+<div class="box">
+  {% if tab == 'login' %}
+    {% comment %} <div class="box-title">Welcome back</div> {% endcomment %}
+    <div class="box-sub">Sign in to your account</div>
+    {% if error %}<div class="error">⚠ {{ error }}</div>{% endif %}
+    <form method="POST" action="/login/">
+      {% csrf_token %}
+      <div class="field">
+        <label>Email</label>
+        <input type="email" name="email" placeholder="you@example.com" required autocomplete="email">
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" name="password" placeholder="••••••••" required autocomplete="current-password">
+      </div>
+      <button class="btn" type="submit">Sign In →</button>
+    </form>
+    <div class="toggle">
+      Don't have an account? <a href="/register/">Create one</a>
+    </div>
+  {% else %}
+    <div class="box-title">Create account</div>
+    <div class="box-sub">Start your risk assessment</div>
+    {% if error %}<div class="error">⚠ {{ error }}</div>{% endif %}
+    <form method="POST" action="/register/">
+      {% csrf_token %}
+      <div class="field">
+        <label>Email</label>
+        <input type="email" name="email" placeholder="you@example.com" required autocomplete="email">
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" name="password" placeholder="Min. 8 characters" required autocomplete="new-password">
+      </div>
+      <button class="btn" type="submit">Create Account →</button>
+    </form>
+    <div class="toggle">
+      Already have an account? <a href="/login/">Sign in</a>
+    </div>
+  {% endif %}
+</div>
+
+</body>
+</html>

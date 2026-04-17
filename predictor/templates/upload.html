@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><title>CardioScan — CSV Upload</title>
+  <style>
+    :root {
+      --sky:       #3B9FD4;
+      --sky-light: #EBF5FB;
+      --sky-mid:   #C2DFF0;
+      --sky-dark:  #1E6A96;
+      --white:     #FFFFFF;
+      --off:       #F7FAFB;
+      --border:    #D0E8F2;
+      --text:      #1A2B35;
+      --text2:     #4A6578;
+      --text3:     #8AAAB8;
+      --red:       #D64F4F;
+      --amber:     #D4891A;
+      --green:     #2E9E74;
+      --r:         8px;
+      --r-lg:      14px;
+      --r-xl:      20px;
+      --shadow-sm: 0 1px 3px rgba(30,80,120,.08);
+      --shadow-md: 0 4px 16px rgba(30,80,120,.10);
+    }
+
+    *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--off);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0 0 60px;
+    }
+
+    /* HEADER */
+    .header {
+      width: 100%;
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 0 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 68px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: var(--shadow-sm);
+    }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .brand-icon {
+      width: 34px; height: 34px;
+      background: var(--sky);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .brand-name {
+      font-size: 24px; color: var(--text);
+      letter-spacing: -.2px; font-weight: 800;
+    }
+    .brand-name em { font-style: italic; color: var(--sky); }
+    .brand-tag {
+      font-size: 10px; color: var(--text3);
+      letter-spacing: 2px; text-transform: uppercase;
+      margin-top: 1px; font-weight: 700;
+    }
+    .header-nav { display: flex; align-items: center; gap: 6px; }
+    .nav-link {
+      font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
+      color: var(--text3); text-decoration: none;
+      padding: 8px 18px; border-radius: 40px;
+      border: 1px solid transparent; transition: .18s; font-weight: 700;
+    }
+    .nav-link:hover, .nav-link.active {
+      border-color: var(--sky); color: var(--sky); background: var(--sky-light);
+    }
+
+    /* MAIN */
+    .main {
+      width: 100%; max-width: 700px;
+      padding: 32px 24px 0;
+    }
+
+    .card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--r-xl);
+      box-shadow: var(--shadow-sm);
+      padding: 32px;
+    }
+
+    .card-title {
+      font-size: 20px; font-weight: 800;
+      color: var(--text); margin-bottom: 4px;
+    }
+    .section-label {
+      font-size: 11px; letter-spacing: 2px;
+      text-transform: uppercase; color: var(--sky);
+      font-weight: 800; margin-bottom: 24px;
+    }
+
+    /* Drop zone */
+    .drop-zone {
+      border: 1.5px dashed var(--sky-mid);
+      border-radius: var(--r-lg);
+      padding: 40px; text-align: center;
+      cursor: pointer; transition: .2s;
+      margin-bottom: 20px;
+      background: var(--sky-light);
+    }
+    .drop-zone:hover {
+      border-color: var(--sky);
+      background: #dff0f9;
+    }
+    .drop-icon { font-size: 36px; margin-bottom: 12px; }
+    .drop-text {
+      font-size: 13px; color: var(--text3);
+      font-weight: 600; line-height: 1.8;
+    }
+    input[type=file] { display: none; }
+
+    #fname {
+      font-size: 12px; color: var(--sky-dark);
+      margin-top: 8px; font-weight: 700; min-height: 16px;
+    }
+
+    .btn {
+      padding: 14px 28px; border: none;
+      border-radius: var(--r); background: var(--sky);
+      color: white; font-size: 15px; font-weight: 800;
+      cursor: pointer; transition: .2s; width: 100%;
+    }
+    .btn:hover { background: var(--sky-dark); }
+
+    .error {
+      background: rgba(214,79,79,.08);
+      border: 1px solid rgba(214,79,79,.3);
+      border-radius: var(--r);
+      padding: 12px 16px;
+      font-size: 12px; color: var(--red);
+      margin-bottom: 16px; font-weight: 600;
+    }
+
+    /* Columns grid */
+    .cols-wrap {
+      margin-top: 28px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+    .cols-title {
+      font-size: 11px; letter-spacing: 2px;
+      text-transform: uppercase; color: var(--text3);
+      font-weight: 700; margin-bottom: 12px;
+    }
+    .cols {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+    .col-tag {
+      background: var(--sky-light);
+      border: 1px solid var(--sky-mid);
+      border-radius: var(--r);
+      padding: 8px 10px;
+      font-size: 11px; color: var(--sky-dark);
+      text-align: center; font-weight: 700;
+      letter-spacing: .3px;
+    }
+
+    @media(max-width: 480px) {
+      .cols { grid-template-columns: repeat(3, 1fr); }
+      .header { padding: 0 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="brand">
+    <div class="brand-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M12 21s-9-5.5-9-11.5A5.5 5.5 0 0 1 12 5.93 5.5 5.5 0 0 1 21 9.5C21 15.5 12 21 12 21z" fill="white" opacity=".9"/>
+        <path d="M6 12h2.5l1.5-3 2 6 1.5-3.5 1 2H18" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div>
+      <div class="brand-name">Cardio<em>Scan</em></div>
+      <div class="brand-tag">Risk Assessment v3.0</div>
+    </div>
+  </div>
+  <div class="header-nav">
+    <a href="/" class="nav-link">New Scan</a>
+    <a href="/dashboard/" class="nav-link">Dashboard</a>
+    <a href="/upload-csv/" class="nav-link active">CSV Upload</a>
+    <a href="/logout/" class="nav-link">Sign Out</a>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="card">
+    <div class="card-title">Batch CSV Upload</div>
+    <div class="section-label">Clinic Mode — Bulk Predictions</div>
+
+    {% if error %}<div class="error">⚠ {{ error }}</div>{% endif %}
+
+    <form method="POST" enctype="multipart/form-data" id="uploadForm">
+      {% csrf_token %}
+      <label for="csv_file">
+        <div class="drop-zone" id="dropZone">
+          <div class="drop-icon">📂</div>
+          <div class="drop-text">
+            Click to select a CSV file<br/>or drag and drop here
+          </div>
+          <div id="fname"></div>
+        </div>
+      </label>
+      <input type="file" id="csv_file" name="csv_file" accept=".csv" onchange="showName(this)">
+      <button class="btn" type="submit">Run Batch Prediction → Download Results</button>
+    </form>
+
+    <div class="cols-wrap">
+      <div class="cols-title">Required CSV Columns</div>
+      <div class="cols">
+        <div class="col-tag">age</div>
+        <div class="col-tag">gender</div>
+        <div class="col-tag">height</div>
+        <div class="col-tag">weight</div>
+        <div class="col-tag">ap_hi</div>
+        <div class="col-tag">ap_lo</div>
+        <div class="col-tag">cholesterol</div>
+        <div class="col-tag">gluc</div>
+        <div class="col-tag">smoke</div>
+        <div class="col-tag">alco</div>
+        <div class="col-tag">active</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function showName(input) {
+  document.getElementById('fname').textContent = input.files[0]?.name || '';
+}
+const dz = document.getElementById('dropZone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.style.borderColor = 'var(--sky)'; });
+dz.addEventListener('dragleave', () => { dz.style.borderColor = 'var(--sky-mid)'; });
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.style.borderColor = 'var(--sky-mid)';
+  const file = e.dataTransfer.files[0];
+  if (file) {
+    const dt = new DataTransfer(); dt.items.add(file);
+    document.getElementById('csv_file').files = dt.files;
+    document.getElementById('fname').textContent = file.name;
+  }
+});
+</script>
+</body>
+</html>
